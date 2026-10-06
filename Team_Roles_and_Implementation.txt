@@ -1,0 +1,83 @@
+AI-Powered EHR Summarizer & Hospital Data Analytics Platform
+====================================================================
+DETAILED TECHNICAL BLUEBOOK & MICRO-LEVEL IMPLEMENTATION GUIDE
+
+This document serves as the absolute, micro-level technical documentation for the platform. It is broken down into the 4 core team roles. Use this document to confidently explain the deep technical mechanics of every component (FAISS, Vectors, LLM, FastAPI, Pandas, React, and Plotly).
+
+--------------------------------------------------------------------
+1. ARJUN SHETTY - CORE GenAI, RAG, & PROMPT ENGINEERING
+--------------------------------------------------------------------
+Role Overview: Arjun is responsible for the entire Artificial Intelligence brain of the application, ensuring the AI reads medical records and outputs accurate, strictly formatted medical insights without hallucinating.
+
+MICRO-LEVEL COMPONENT BREAKDOWN:
+A. The LLM (Large Language Model) Inference via Groq/OpenRouter
+- How it works: The system uses advanced open-weights models (like Llama-3.1-8B or Mixtral-8x7B). Instead of running these massive models locally (which requires expensive GPUs), Arjun utilized API endpoints (Groq/OpenRouter) using `langchain_openai` and `langchain_groq`.
+- Strict Prompt Engineering: LLMs naturally want to converse. Arjun engineered a "System Prompt" that injects the patient's stats and strictly commands the LLM to output ONLY in a JSON dictionary format. It uses Regex (`re.search`) at the micro-level to strip away any conversational text the AI tries to add, guaranteeing the frontend receives machine-readable code.
+
+B. The Vector Database & Embeddings (sentence-transformers)
+- How it works: Words cannot be mathematically searched. Arjun utilized the `all-MiniLM-L6-v2` embedding model from HuggingFace to convert English medical guidelines into "Vectors" (high-dimensional arrays of floating-point numbers). 
+- FAISS (Facebook AI Similarity Search): FAISS stores these vectors. When a patient is queried (e.g., "Blood pressure 150/90"), that query is ALSO converted into a vector. FAISS calculates the "Cosine Similarity" (the mathematical distance/angle between vectors) to find the closest matching clinical guideline in milliseconds.
+
+C. LangGraph Pipeline (StateGraph)
+- How it works: Instead of a simple prompt, Arjun built a cyclical Graph algorithm. The `AgentState` dictionary gets passed through 4 nodes:
+  1. Extract: Opens a database session and pulls the raw SQL text.
+  2. Retrieve: Executes the FAISS vector search described above.
+  3. Summarize: Injects the FAISS results + SQL text into the LLM prompt.
+  4. Flag: Reads the JSON output from the LLM and commits any detected risks directly back into Krish's SQL database.
+
+
+--------------------------------------------------------------------
+2. ARYAN MAURYA - FRONTEND REACT DEVELOPER & UI ARCHITECT
+--------------------------------------------------------------------
+Role Overview: Aryan is responsible for the entire user-facing architecture, ensuring complex backend data is rendered beautifully, asynchronously, and interactively for both Clinicians and Administrators.
+
+MICRO-LEVEL COMPONENT BREAKDOWN:
+A. React.js & Vite (The Virtual DOM)
+- How it works: The UI is built using React.js. At a micro-level, React maintains a "Virtual DOM" (a lightweight copy of the browser screen). When data updates (e.g., the AI summary arrives), React calculates the exact difference and updates ONLY that specific text box rather than reloading the whole page. Vite is used as the bundler, compiling the JavaScript incredibly fast via esbuild (written in Go).
+
+B. State Management & Asynchronous APIs (Axios)
+- How it works: Aryan utilized React Hooks (`useState` and `useEffect`). When a doctor clicks "Synthesize", an asynchronous HTTP GET request is fired via `Axios` to Krish's FastAPI backend. While waiting, `useState` triggers a loading spinner. Once the JSON payload returns, the state updates, triggering the smooth slide-in animations.
+
+C. Tailwind CSS v4 & Lucide Icons
+- How it works: Instead of writing raw CSS files, Aryan used Tailwind, a utility-first framework that compiles only the classes actually used in the code, keeping the application lightweight. Lucide-React provides the SVG vector icons (like the Stethoscope and Database icons) rendered cleanly without pixelation.
+
+D. Data Visualization (Plotly Dash via react-plotly.js)
+- How it works: Sarthak's backend sends raw arrays of numbers (e.g., Departments: [Cardiology, General], Counts: [5, 7]). Aryan passes these exact arrays into the `<Plot>` component. The Plotly engine (built on D3.js and WebGL) mathematically calculates the pixel coordinates and renders interactive SVG charts directly into the browser, handling hover states and scaling automatically.
+
+
+--------------------------------------------------------------------
+3. KRISH VANANI - BACKEND API & DATABASE ARCHITECT
+--------------------------------------------------------------------
+Role Overview: Krish is the bridge. He ensures that Arjun's AI and Sarthak's Analytics have a structured, lightning-fast place to read and write data, and that Aryan's frontend can request that data securely.
+
+MICRO-LEVEL COMPONENT BREAKDOWN:
+A. FastAPI & Uvicorn (The Server Engine)
+- How it works: FastAPI is a modern Python web framework. It uses Pydantic to strictly validate data types (ensuring an ID is an integer, not a string). Uvicorn acts as the ASGI (Asynchronous Server Gateway Interface), sitting on Port 8000 and actively listening for incoming HTTP requests from the React frontend, processing them concurrently without blocking the thread.
+
+B. RESTful Endpoints
+- How it works: Krish built specific routes:
+  - `/api/patients/{id}/summary`: Triggers Arjun's GenAI LangGraph.
+  - `/api/analytics/dashboard`: Triggers Sarthak's Pandas logic.
+  - `/api/debug/database`: Returns a raw dump of the SQL schema.
+
+C. Relational Database (SQLite) & ORM (SQLAlchemy)
+- How it works: At the lowest level, data is stored in a `hospital.db` SQLite binary file. To interact with it, Krish used SQLAlchemy as an ORM (Object-Relational Mapper). This translates Python classes into raw SQL syntax (`CREATE TABLE`, `SELECT * FROM`). 
+- Schema: Krish designed three strict tables: `patients` (Primary Key: id), `encounters` (Foreign Key linking to patients), and `insight_flags` (stores AI outputs). This strict relational mapping prevents orphaned data.
+
+
+--------------------------------------------------------------------
+4. SARTHAK WAKADE - DATA ANALYTICS & ETL ENGINEER
+--------------------------------------------------------------------
+Role Overview: Sarthak is responsible for macro-level population health. He handles raw data ingestion from the outside world and transforms database rows into high-level hospital metrics.
+
+MICRO-LEVEL COMPONENT BREAKDOWN:
+A. Kaggle Dataset Ingestion (ETL Scripting)
+- How it works: The system doesn't rely on random data. Sarthak built `setup_data.py` to ingest the standard "Healthcare Dataset" CSV from Kaggle. 
+- Micro-logic: The script uses Pandas `pd.read_csv()` to parse the comma-separated text into a DataFrame. It uses `.iterrows()` to loop through the raw strings, sanitizes them (e.g., converting random age strings into integers, handling missing blank cells with fallback logic), and uses SQLAlchemy to safely commit them into Krish's SQL tables.
+
+B. Pandas (Data Transformation)
+- How it works: When the frontend requests Analytics, Sarthak's code executes a SQL query to dump the entire database into Pandas DataFrames in server RAM. Pandas is built on top of NumPy (C-compiled arrays), making it incredibly fast.
+- Aggregation Math: Sarthak uses `.groupby('department').size()` to mathematically count how many patients are in each ward. He uses `.mean()` on the length_of_stay column to calculate the exact average hospital stay. 
+
+C. JSON Serialization
+- How it works: DataFrames cannot be sent directly over the internet. Sarthak's final step converts the complex Pandas objects into a native Python dictionary (`.to_dict()`), which FastAPI effortlessly serializes into a standard JSON string payload. This perfectly formatted JSON is what Aryan's Plotly graphs ultimately consume.
