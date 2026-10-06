@@ -81,3 +81,40 @@ B. Pandas (Data Transformation)
 
 C. JSON Serialization
 - How it works: DataFrames cannot be sent directly over the internet. Sarthak's final step converts the complex Pandas objects into a native Python dictionary (`.to_dict()`), which FastAPI effortlessly serializes into a standard JSON string payload. This perfectly formatted JSON is what Aryan's Plotly graphs ultimately consume.
+
+--------------------------------------------------------------------
+PART 3: FIRST-TIME SETUP INSTRUCTIONS (FOR A NEW LAPTOP)
+--------------------------------------------------------------------
+If you are pulling this codebase onto a brand new laptop for the presentation, follow these exact steps to install the necessary packages and run the application:
+
+1. Clone the Repository:
+   > git clone https://github.com/Arjun1579/clg.git
+   > cd clg
+
+2. Setup API Keys (Crucial step since .env is securely ignored on GitHub):
+   - Create a new file named .env in the root clg folder.
+   - Add your API key inside it: 
+     GROQ_API_KEY="your_actual_key_here"
+     OPENROUTER_API_KEY="your_openrouter_key_here"
+
+3. Install Backend Dependencies:
+   - Open a terminal and navigate to the backend folder:
+     > cd backend
+   - Install 'uv' (the ultra-fast Python package manager) if you don't have it:
+     > pip install uv
+   - Install all backend dependencies (this reads the uv.lock file):
+     > uv sync
+   - Generate the local SQLite database from the Kaggle dataset:
+     > uv run python setup_data.py
+
+4. Install Frontend Dependencies:
+   - Open a new terminal and navigate to the frontend folder:
+     > cd frontend
+   - Install Node.js dependencies:
+     > npm install
+
+5. Run the Platform:
+   - Go back to the main clg folder.
+   - Simply double-click the start.bat file! 
+   - This will automatically launch both the FastAPI backend (Port 8000) and the React frontend (Port 5173).
+
