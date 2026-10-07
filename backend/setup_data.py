@@ -25,7 +25,9 @@ def setup_mock_data():
                     gender=str(row.get('Gender', 'U'))[0],
                     admission_date=str(row.get('Date of Admission', '2023-10-01')),
                     department=str(row.get('Medical Condition', 'General')),
-                    length_of_stay=random.randint(2, 15) # Generate random LOS if not present
+                    length_of_stay=random.randint(2, 15), # Generate random LOS if not present
+                    billing_amount=float(row.get('Billing Amount', random.uniform(1000, 50000))),
+                    admission_type=str(row.get('Admission Type', random.choice(['Urgent', 'Emergency', 'Elective'])))
                 )
                 db.add(p)
                 db.commit()
@@ -40,7 +42,8 @@ def setup_mock_data():
                     clinical_notes=f"Patient admitted for {condition}. Requires monitoring.",
                     medications=meds,
                     lab_bp_systolic=random.randint(110, 160),
-                    lab_bp_diastolic=random.randint(70, 100)
+                    lab_bp_diastolic=random.randint(70, 100),
+                    test_results=str(row.get('Test Results', random.choice(['Normal', 'Abnormal', 'Inconclusive'])))
                 )
                 db.add(e)
             db.commit()

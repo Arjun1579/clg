@@ -18,6 +18,8 @@ class Patient(Base):
     admission_date = Column(String)
     department = Column(String)
     length_of_stay = Column(Integer) # in days
+    billing_amount = Column(Float, default=0.0) # 
+    admission_type = Column(String, default="Elective") # 
 
 class Encounter(Base):
     __tablename__ = "encounters"
@@ -28,6 +30,7 @@ class Encounter(Base):
     medications = Column(String) # comma separated
     lab_bp_systolic = Column(Integer, nullable=True)
     lab_bp_diastolic = Column(Integer, nullable=True)
+    test_results = Column(String, default="Normal") # 
 
 class InsightFlag(Base):
     __tablename__ = "insight_flags"

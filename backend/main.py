@@ -33,6 +33,7 @@ def generate_patient_summary(patient_id: int, db: Session = Depends(get_db)):
     return {
         "patient": {"name": patient.name, "age": patient.age},
         "ai_summary": result.get("summary", "No summary generated."),
+        "readmission_risk": result.get("readmission_risk", "Unknown"),
         "risk_flags": result.get("flags", []),
         "langgraph_trace": {
             "retrieved_guidelines": result.get("retrieved_guidelines", ""),

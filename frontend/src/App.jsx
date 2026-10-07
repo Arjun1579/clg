@@ -74,6 +74,7 @@ function ClinicianView() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [hipaaMode, setHipaaMode] = useState(false); // Module
   
   const handleGenerate = async () => {
     setLoading(true); setError(''); setData(null);
@@ -88,6 +89,17 @@ function ClinicianView() {
 
   return (
     <div className="max-w-5xl xl:max-w-6xl mx-auto space-y-6">
+      {/* HIPAA Privacy Toggle */}
+      <div className="flex justify-end mb-2">
+        <button 
+          onClick={() => setHipaaMode(!hipaaMode)}
+          className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wide flex items-center gap-2 border transition-colors ${hipaaMode ? 'bg-emerald-100 text-emerald-700 border-emerald-300' : 'bg-white text-slate-500 border-slate-200'}`}
+        >
+          {hipaaMode ? <ShieldAlert size={14} /> : <Users size={14} />}
+          HIPAA Privacy Mode: {hipaaMode ? 'ON' : 'OFF'}
+        </button>
+      </div>
+
       {/* Search Bar */}
       <div className="bg-white p-2 pl-6 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-4">
         <Search className="text-slate-400" size={20} />
@@ -118,6 +130,24 @@ function ClinicianView() {
           {/* Main Info Column */}
           <div className="lg:col-span-2 space-y-6">
             
+            {/* Patient Header */}
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex justify-between items-center">
+              <div>
+                <h3 className="text-sm text-slate-500 uppercase tracking-widest font-semibold mb-1">Patient Name</h3>
+                <p className={`text-2xl font-bold text-slate-800 ${hipaaMode ? 'blur-sm select-none' : ''}`}>{data.patient.name}</p>
+              </div>
+              <div className="text-right">
+                <h3 className="text-sm text-slate-500 uppercase tracking-widest font-semibold mb-1">Age</h3>
+                <p className={`text-xl font-bold text-slate-700 ${hipaaMode ? 'blur-sm select-none' : ''}`}>{data.patient.age} Yrs</p>
+              </div>
+              <div className="text-right">
+                <h3 className="text-sm text-slate-500 uppercase tracking-widest font-semibold mb-1">Readmission Risk</h3>
+                <span className={`px-4 py-1.5 rounded-full text-sm font-bold uppercase ${data.readmission_risk === 'High' ? 'bg-rose-100 text-rose-700' : data.readmission_risk === 'Medium' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'}`}>
+                  {data.readmission_risk} Risk
+                </span>
+              </div>
+            </div>
+
             <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
               <div className="bg-slate-50 border-b border-slate-200 px-6 py-4 flex items-center gap-2">
                 <FileText size={20} className="text-blue-600" />
@@ -217,6 +247,14 @@ function AdminView() {
   const deptCounts = metrics.admissions_by_department.map(d => d.count);
   const flagNames = metrics.flags_distribution.map(f => f.flag_type);
   const flagCounts = metrics.flags_distribution.map(f => f.count);
+  
+  // Module: Revenue Analytics
+  const revDeptNames = metrics.revenue_by_department ? metrics.revenue_by_department.map(d => d.department) : [];
+  const revAmounts = metrics.revenue_by_department ? metrics.revenue_by_department.map(d => d.total_revenue) : [];
+
+  // Module: Admission Types
+  const admTypeNames = metrics.admission_types ? metrics.admission_types.map(d => d.admission_type) : [];
+  const admTypeCounts = metrics.admission_types ? metrics.admission_types.map(d => d.count) : [];
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
@@ -228,23 +266,54 @@ function AdminView() {
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+        {/* Patient Volume */}
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
           <h2 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
-            <Users size={20} className="text-blue-600" /> Patient Distribution by Department
+            <Users size={20} className="text-blue-600" /> Patient Volume by Department
           </h2>
           <div className="flex justify-center">
             <Plot
               data={[{ type: 'bar', x: deptNames, y: deptCounts, marker: { color: '#3b82f6', borderRadius: 4 } }]}
-              layout={{ width: 500, height: 350, margin: { t: 10, b: 40, l: 40, r: 10 }, paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)' }}
+              layout={{ width: 500, height: 280, margin: { t: 10, b: 40, l: 40, r: 10 }, paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)' }}
               config={{ displayModeBar: false }}
             />
           </div>
         </div>
+
+        {/* Revenue Analytics */}
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+          <h2 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
+            <Database size={20} className="text-emerald-600" /> Revenue Analytics
+          </h2>
+          <div className="flex justify-center">
+            <Plot
+              data={[{ type: 'bar', x: revDeptNames, y: revAmounts, marker: { color: '#10b981', borderRadius: 4 } }]}
+              layout={{ width: 500, height: 280, margin: { t: 10, b: 40, l: 60, r: 10 }, paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)' }}
+              config={{ displayModeBar: false }}
+            />
+          </div>
+        </div>
+
+        {/* Patient Flow / Admission Types */}
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+          <h2 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
+            <ActivitySquare size={20} className="text-purple-600" /> Patient Flow: Admission Types
+          </h2>
+          <div className="flex justify-center items-center h-[280px]">
+             <Plot
+                data={[{ type: 'pie', labels: admTypeNames, values: admTypeCounts, hole: 0.5, marker: { colors: ['#a855f7', '#ec4899', '#8b5cf6'] } }]}
+                layout={{ width: 500, height: 280, margin: { t: 10, b: 10, l: 10, r: 10 }, paper_bgcolor: 'rgba(0,0,0,0)' }}
+                config={{ displayModeBar: false }}
+              />
+          </div>
+        </div>
+
+        {/* Clinical Quality / Flags */}
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
           <h2 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
             <ShieldAlert size={20} className="text-rose-600" /> Clinical Quality: Insight Flags
           </h2>
-          <div className="flex justify-center items-center h-[350px]">
+          <div className="flex justify-center items-center h-[280px]">
             {flagCounts.reduce((a, b) => a + b, 0) === 0 ? (
               <div className="text-center text-slate-400">
                 <ShieldAlert size={48} className="mx-auto mb-3 opacity-20" />
@@ -254,7 +323,7 @@ function AdminView() {
             ) : (
               <Plot
                 data={[{ type: 'pie', labels: flagNames, values: flagCounts, hole: 0.5, marker: { colors: ['#ef4444', '#f59e0b', '#3b82f6'] } }]}
-                layout={{ width: 500, height: 350, margin: { t: 10, b: 10, l: 10, r: 10 }, paper_bgcolor: 'rgba(0,0,0,0)' }}
+                layout={{ width: 500, height: 280, margin: { t: 10, b: 10, l: 10, r: 10 }, paper_bgcolor: 'rgba(0,0,0,0)' }}
                 config={{ displayModeBar: false }}
               />
             )}

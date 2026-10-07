@@ -39,7 +39,9 @@ class AgentState(TypedDict):
     retrieved_guidelines: str
     flags: List[dict]
     summary: str
+    readmission_risk: str # Module
 
+#vector rag
 def init_rag():
     try:
         from langchain_huggingface import HuggingFaceEmbeddings
@@ -55,10 +57,29 @@ vectorstore = init_rag()
 def node_extract(state: AgentState):
     db = SessionLocal()
     enc = db.query(Encounter).filter(Encounter.patient_id == state['patient_id']).first()
-    if enc:
+    from database import Patient
+    pat = db.query(Patient).filter(Patient.id == state['patient_id']).first()
+    
+    if enc and pat:
         state['notes'] = enc.clinical_notes
         state['medications'] = enc.medications
         state['lab_bp'] = f"{enc.lab_bp_systolic}/{enc.lab_bp_diastolic}"
+        
+        # Module: Simple CDSS Readmission Risk Algorithm
+        risk_score = 0
+        if pat.age > 60: risk_score += 1
+        if getattr(pat, 'admission_type', 'Elective') == 'Emergency': risk_score += 2
+        if getattr(enc, 'test_results', 'Normal') == 'Abnormal': risk_score += 2
+        
+        if risk_score >= 3:
+            state['readmission_risk'] = 'High'
+        elif risk_score >= 1:
+            state['readmission_risk'] = 'Medium'
+        else:
+            state['readmission_risk'] = 'Low'
+    else:
+        state['readmission_risk'] = 'Unknown'
+        
     db.close()
     return state
 
@@ -167,5 +188,5 @@ workflow.add_edge("Flag", END)
 app_graph = workflow.compile()
 
 def run_genai_pipeline(patient_id: int):
-    final_state = app_graph.invoke({"patient_id": patient_id, "notes": "", "medications": "", "lab_bp": "", "retrieved_guidelines": "", "flags": [], "summary": ""})
+    final_state = app_graph.invoke({"patient_id": patient_id, "notes": "", "medications": "", "lab_bp": "", "retrieved_guidelines": "", "flags": [], "summary": "", "readmission_risk": "Unknown"})
     return final_state
