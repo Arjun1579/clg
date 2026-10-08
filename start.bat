@@ -11,7 +11,7 @@ cd ..
 
 echo Starting React Frontend...
 cd frontend
-start cmd /k "npm run dev"
+start cmd /k "npx vite"
 cd ..
 
 echo ====================================================
