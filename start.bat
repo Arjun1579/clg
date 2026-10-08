@@ -11,7 +11,7 @@ cd ..
 
 echo Starting React Frontend...
 cd frontend
-start cmd /k "npx vite"
+start cmd /k "node ./node_modules/vite/bin/vite.js"
 cd ..
 
 echo ====================================================
